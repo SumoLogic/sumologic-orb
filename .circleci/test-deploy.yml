@@ -20,6 +20,8 @@ jobs:
           environment: prod
           team: apps
           service: solutions
+          job-collector: sample_endpoint
+          circle-token: sample_token
 workflows:
   test-deploy:
     jobs:
