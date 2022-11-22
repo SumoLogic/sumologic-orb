@@ -20,7 +20,7 @@ jobs:
           environment: prod
           team: apps
           service: solutions
-          job-collector: $JOB_HTTP_SOURCE
+          #job-collector: $JOB_HTTP_SOURCE
 workflows:
   test-deploy:
     jobs:
