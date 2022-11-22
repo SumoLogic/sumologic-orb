@@ -41,8 +41,4 @@ else
 fi
 echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
 curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${PARAM_JOBCOLLECTOR}"
-# curl -i \
-# -H "Accept: application/json" \
-# -H "Content-Type:application/json" \
-# -X POST --data "$JOB_DATA_RAW" "${PARAM_JOBCOLLECTOR}"
 echo "Job details sent to Sumo."
