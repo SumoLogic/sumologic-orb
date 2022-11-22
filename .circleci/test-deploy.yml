@@ -17,7 +17,7 @@ jobs:
       - checkout
       # Run your orb's commands to validate them.
       - sumologic-circleci-orb/job-collector:
-          enviornment: prod
+          environment: prod
           team: apps
           service: solutions
 workflows:
