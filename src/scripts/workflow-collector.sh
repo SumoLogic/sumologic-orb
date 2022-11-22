@@ -4,7 +4,7 @@
 ###############
 DATA_URL="https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${PARAM_CIRCLETOKEN}"
 WF_DATA=$(curl -s "$DATA_URL")
-WF_ITEMS=$(echo $WF_DATA | jq '.items')
+WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
 WF_MESSAGE=$(echo "$WF_DATA" | jq '.message')
 # Exit if no Workflow.
@@ -16,8 +16,8 @@ then
 fi
 WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 # GET URL PATH DATA
-VCS_SHORT=$(echo $CIRCLE_BUILD_URL | cut -d"/" -f4)
-case $VCS_SHORT in
+VCS_SHORT=$(echo "$CIRCLE_BUILD_URL" | cut -d"/" -f4)
+case "$VCS_SHORT" in
     gh)
     VCS=github
     ;;
@@ -35,18 +35,18 @@ WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_I
 
 # Append any custom data to the workflow data
 ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
-CUSTOM_DATA=$(eval "echo $ESCAPED_JSON")
-if [[ ! -z '<< parameters.custom-data >>' ]] && echo "$CUSTOM_DATA" | jq -e;
+CUSTOM_DATA=$(eval "echo "$ESCAPED_JSON"")
+if [[ -n '<< parameters.custom-data >>' ]] && echo "$CUSTOM_DATA" | jq -e;
 then
     echo "Appending custom data to the workflow data"
-    WF_SL_PAYLOAD=$(echo $WF_SL_PAYLOAD | jq -c ". +  {\"custom_data\": $CUSTOM_DATA} + {\"items\": $WF_ITEMS}")
+    WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD" | jq -c ". +  {\"custom_data\": "$CUSTOM_DATA"} + {\"items\": "$WF_ITEMS"}")
 else
     echo "No valid custom data found to append to the workflow data"
 fi
 
 echo "SENDING FINAL WORKFLOW DATA"
-echo $WF_SL_PAYLOAD
-echo $WF_SL_PAYLOAD > /tmp/sumologic-logs/workflow-collector.json
+echo "$WF_SL_PAYLOAD"
+echo "$WF_SL_PAYLOAD" > /tmp/sumologic-logs/workflow-collector.json
 curl -s -X POST -T /tmp/sumologic-logs/workflow-collector.json "${PARAM_WORKFLOWCOLLECTOR}"
 echo "Complete. You may now find your worflow log in Sumologic."
 
@@ -66,8 +66,8 @@ do
     then
         echo "This is the reporter job. Skipping"
     else
-        echo "JOB: $JOB_NAME"
-        echo "JOB NUM: $JOB_NUMBER"
+        echo "JOB: "$JOB_NAME""
+        echo "JOB NUM: "$JOB_NUMBER""
         mkdir -p /tmp/sumologic-logs/
         if [ "$JOB_NUMBER" = "null" ];
         then
@@ -82,10 +82,10 @@ do
                 echo "This job log has already been sent to Sumo, skipping."
             else
                 # Manually set job name as it is currently null
-                JOB_DATA_RAW=$(echo $JOB_DATA_RAW | jq --arg JOBNAME "$JOB_NAME" '.job_name = $JOBNAME')
+                JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq --arg JOBNAME "$JOB_NAME" '.job_name = $JOBNAME')
                 # removing steps and circle_yml keys from object
-                JOB_DATA_RAW=$(echo $JOB_DATA_RAW | jq 'del(.circle_yml)' | jq 'del(.steps)')
-                echo $JOB_DATA_RAW > /tmp/sumologic-logs/job-collector.json
+                JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq 'del(.circle_yml)' | jq 'del(.steps)')
+                echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
                 curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${PARAM_JOBCOLLECTOR}"
             fi
         fi

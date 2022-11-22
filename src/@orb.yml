@@ -4,7 +4,7 @@ description: >
   "Report CircleCI job analytics to your SumoLogic dashboard.
   Website: sumologic.com"
 display:
-  home_url: "https://www.example.com/docs"
+  home_url: "https://www.circleci.com/docs"
   source_url: "https://github.com/SumoLogic/sumologic-orb"
 
 orbs:
