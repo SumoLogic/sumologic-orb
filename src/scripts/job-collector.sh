@@ -38,8 +38,8 @@ then
 else
     echo "No valid custom data found to append to the job data"
 fi
-echo $PARAM_JOBCOLLECTOR
-echo $JOB_HTTP_SOURCE
+echo "$PARAM_JOBCOLLECTOR"
+echo "$JOB_HTTP_SOURCE"
 echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
 curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${PARAM_JOBCOLLECTOR}"
 echo "Job details sent to Sumo."
