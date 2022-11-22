@@ -11,7 +11,7 @@ bb)
     echo "No VCS found. Error" && exit 1
     ;;
 esac
-JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM?circle-token=${PARAM_CIRCLETOKEN}")
+JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM?circle-token=${CIRCLE_TOKEN}")
 # removing steps and circle_yml keys from object
 JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq 'del(.circle_yml)' | jq 'del(.steps)')
 JOB_NAME=$(echo "$JOB_DATA_RAW" | jq .workflows | jq .job_name)
@@ -38,8 +38,6 @@ then
 else
     echo "No valid custom data found to append to the job data"
 fi
-#echo "$PARAM_JOBCOLLECTOR"
-echo "$JOB_HTTP_SOURCE"
 echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
 curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${JOB_HTTP_SOURCE}"
 echo "Job details sent to Sumo."

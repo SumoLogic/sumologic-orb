@@ -2,7 +2,7 @@
 ###############
 # Begin Collecting
 ###############
-DATA_URL="https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${PARAM_CIRCLETOKEN}"
+DATA_URL="https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}"
 WF_DATA=$(curl -s "$DATA_URL")
 WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
@@ -31,7 +31,7 @@ esac
 ########################################
 # Send end-of-workflow data to Sumologic
 ########################################
-WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${PARAM_CIRCLETOKEN}" | jq '.')
+WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" | jq '.')
 
 # Append any custom data to the workflow data
 ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
@@ -47,7 +47,7 @@ fi
 echo "SENDING FINAL WORKFLOW DATA"
 echo "$WF_SL_PAYLOAD"
 echo "$WF_SL_PAYLOAD" > /tmp/sumologic-logs/workflow-collector.json
-curl -s -X POST -T /tmp/sumologic-logs/workflow-collector.json "${PARAM_WORKFLOWCOLLECTOR}"
+curl -s -X POST -T /tmp/sumologic-logs/workflow-collector.json "${WORKFLOW_HTTP_SOURCE}"
 echo "Complete. You may now find your worflow log in Sumologic."
 
 # Looping through each job data
@@ -73,7 +73,7 @@ do
         then
             echo "Approval Job, skipping"
         else
-            JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$JOB_NUMBER?circle-token=${PARAM_CIRCLETOKEN}")
+            JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
             WF_STEP_NAMES=$(echo "$JOB_DATA_RAW" | jq '.steps' | jq .[] | jq '.name')
             JOB_COLLECTOR_NAME="Job Collector"
             # Skip sending job data if it has already included job-collector command in one of it's steps
@@ -86,7 +86,7 @@ do
                 # removing steps and circle_yml keys from object
                 JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq 'del(.circle_yml)' | jq 'del(.steps)')
                 echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
-                curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${PARAM_JOBCOLLECTOR}"
+                curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${JOB_HTTP_SOURCE}"
             fi
         fi
     fi

@@ -18,7 +18,6 @@ usage:
                 - sumologic/job-collector:
                     environment: dev
                     team: APPS
-                    job-collector: job_collector_http_endpoint
         test:
             docker:
                 - image: cimg/node
@@ -28,8 +27,6 @@ usage:
                     environment: QE
                     team: APPS
                     service: Solutions
-                    job-collector: job_collector_http_endpoint
-
     workflows:
         build-test-and-deploy:
             jobs:
