@@ -16,9 +16,9 @@ JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJE
 JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq 'del(.circle_yml)' | jq 'del(.steps)')
 JOB_NAME=$(echo "$JOB_DATA_RAW" | jq .workflows | jq .job_name)
 JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq .status)
-echo "JOB: "$JOB_NAME""
-echo "JOB NUM: "$CIRCLE_BUILD_NUM""
-echo "STATUS: "$JOB_STATUS""
+echo "JOB: $JOB_NAME"
+echo "JOB NUM: $CIRCLE_BUILD_NUM"
+echo "STATUS: $JOB_STATUS"
 #####
 # Send Job Data to SumoLogic
 #####
@@ -34,7 +34,7 @@ JOB_CUSTOM_DATA=$( jq -n \
 if [ -n "$JOB_CUSTOM_DATA" ]
 then
     echo "Appending custom data to the job data"
-    JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq -c ". +  {\"custom_data\": "$JOB_CUSTOM_DATA"}")
+    JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq -c ". +  {\"custom_data\": $JOB_CUSTOM_DATA}")
 else
     echo "No valid custom data found to append to the job data"
 fi

@@ -35,11 +35,11 @@ WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_I
 
 # Append any custom data to the workflow data
 ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
-CUSTOM_DATA=$(eval "echo "$ESCAPED_JSON"")
+CUSTOM_DATA=$(eval "echo $ESCAPED_JSON")
 if [[ -n '<< parameters.custom-data >>' ]] && echo "$CUSTOM_DATA" | jq -e;
 then
     echo "Appending custom data to the workflow data"
-    WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD" | jq -c ". +  {\"custom_data\": "$CUSTOM_DATA"} + {\"items\": "$WF_ITEMS"}")
+    WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD" | jq -c ". +  {\"custom_data\": $CUSTOM_DATA} + {\"items\": $WF_ITEMS}")
 else
     echo "No valid custom data found to append to the workflow data"
 fi
@@ -66,8 +66,8 @@ do
     then
         echo "This is the reporter job. Skipping"
     else
-        echo "JOB: "$JOB_NAME""
-        echo "JOB NUM: "$JOB_NUMBER""
+        echo "JOB: $JOB_NAME"
+        echo "JOB NUM: $JOB_NUMBER"
         mkdir -p /tmp/sumologic-logs/
         if [ "$JOB_NUMBER" = "null" ];
         then
