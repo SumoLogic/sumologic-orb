@@ -41,6 +41,10 @@ else
 fi
 echo "$JOB_DATA_RAW"
 echo "${PARAM_JOBCOLLECTOR}"
-echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
-curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${PARAM_JOBCOLLECTOR}"
+# echo "$JOB_DATA_RAW" > /tmp/sumologic-logs/job-collector.json
+# curl -s -X POST -T /tmp/sumologic-logs/job-collector.json "${PARAM_JOBCOLLECTOR}"
+curl -i \
+-H "Accept: application/json" \
+-H "Content-Type:application/json" \
+-X POST --data "$JOB_DATA_RAW" "https://collectors.sumologic.com/receiver/v1/http/ZaVnC4dhaV1i1qKyUik2r-G_tG5fcI9gsHnczlmIwRKknjMrQzQFK7qCnPG3_qGCyZXZBvwoWscRxDn1bJzObgT3Nh_bnKqcvKIE0Rsn_2etqs2tqwkaWg=="
 echo "Job details sent to Sumo."
