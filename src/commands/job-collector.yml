@@ -1,0 +1,24 @@
+description: >
+    "Collect data from every job and report to SumoLogic"
+parameters:
+    environment:
+        default: ""
+        description: Enter the environment name of the event.
+        type: string
+    team:
+        default: ""
+        description: Enter the team carrying out the event.
+        type: string
+    service:
+        default: ""
+        description: Enter the service carrying out the event.
+        type: string
+steps:
+  - jq/install
+  - run:
+      name: Job Collector
+      environment:
+        PARAM_ENV: <<parameters.environment>>
+        PARAM_TEAM: <<parameters.team>>
+        PARAM_SERVICE: <<parameters.service>>
+      command: <<include(scripts/job-collector.sh)>>

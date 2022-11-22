@@ -1,0 +1,15 @@
+description: |
+    "Add this job to your workflow with no require statements. This job will run in parallel with the rest of your workflow for monitoring and will exit when all other jobs have completed."
+executor: default
+parameters:
+    custom-data:
+        default: ""
+        description: A valid JSON object to append to the workflow data.
+        type: string
+steps:
+    - jq/install
+    - run:
+        name: Workflow Collector
+        environment:
+          PARAM_CUSTOMDATA: <<parameters.custom-data>>
+        command: <<include(scripts/workflow-collector.sh)>>
