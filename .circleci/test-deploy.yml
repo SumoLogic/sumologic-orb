@@ -20,7 +20,7 @@ jobs:
           environment: prod
           team: apps
           service: solutions
-          #job-collector: http_source_endpoint
+          job-collector: "hello"
 workflows:
   test-deploy:
     jobs:
