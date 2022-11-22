@@ -31,6 +31,7 @@ JOB_CUSTOM_DATA=$( jq -n \
                     --arg sv "${PARAM_SERVICE}" \
                     '{environment: $en, team: $tm, service: $sv}' )
 # Append any custom data to the job data
+echo "$JOB_CUSTOM_DATA"
 if [ -n "$JOB_CUSTOM_DATA" ]
 then
     echo "Appending custom data to the job data"
