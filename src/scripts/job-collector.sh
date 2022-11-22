@@ -46,5 +46,5 @@ echo "${PARAM_JOBCOLLECTOR}"
 curl -i \
 -H "Accept: application/json" \
 -H "Content-Type:application/json" \
--X POST --data "$JOB_DATA_RAW" "https://collectors.sumologic.com/receiver/v1/http/ZaVnC4dhaV1i1qKyUik2r-G_tG5fcI9gsHnczlmIwRKknjMrQzQFK7qCnPG3_qGCyZXZBvwoWscRxDn1bJzObgT3Nh_bnKqcvKIE0Rsn_2etqs2tqwkaWg=="
+-X POST --data "$JOB_DATA_RAW" "${PARAM_JOBCOLLECTOR}"
 echo "Job details sent to Sumo."
