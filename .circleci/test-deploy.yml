@@ -20,7 +20,7 @@ jobs:
           environment: prod
           team: apps
           service: solutions
-          job-collector: $DEMO_JOB_COLLECTOR_URI
+          job-collector: https://collectors.sumologic.com/receiver/v1/http/ZaVnC4dhaV1i1qKyUik2r-G_tG5fcI9gsHnczlmIwRKknjMrQzQFK7qCnPG3_qGCyZXZBvwoWscRxDn1bJzObgT3Nh_bnKqcvKIE0Rsn_2etqs2tqwkaWg==
 workflows:
   test-deploy:
     jobs:
