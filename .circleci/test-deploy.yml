@@ -28,7 +28,7 @@ workflows:
           filters: *filters
       - sumologic-circleci-orb/workflow-collector:
           custom-data: |
-            {"foo": "bar", "project": "orbdevelopment", "team":{"lead":"John","SE":"Kim"}}
+            {"foo": "bar", "project": "orbdevelopment"}
           filters: *filters
       - orb-tools/pack:
           filters: *filters
