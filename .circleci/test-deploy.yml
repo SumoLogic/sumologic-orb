@@ -26,7 +26,7 @@ workflows:
       # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
       - command-tests:
           filters: *filters
-      - sumologic/workflow-collector:
+      - sumologic-circleci-orb/workflow-collector:
           custom-data: |
             {"foo": "bar", "$SOME_KEY_VAR": "$SOME_VALUE_VAR"}
           filters: *filters
