@@ -46,8 +46,12 @@ fi
 
 echo "SENDING FINAL WORKFLOW DATA"
 echo "$WF_SL_PAYLOAD"
-echo "$WF_SL_PAYLOAD" > /tmp/sumologic-logs/workflow-collector.json
-curl -s -X POST -T /tmp/sumologic-logs/workflow-collector.json "${WORKFLOW_HTTP_SOURCE}"
+# echo "$WF_SL_PAYLOAD" > /tmp/sumologic-logs/workflow-collector.json
+# curl -s -X POST -T /tmp/sumologic-logs/workflow-collector.json "${WORKFLOW_HTTP_SOURCE}"
+curl -i \
+-H "Accept: application/json" \
+-H "Content-Type:application/json" \
+-X POST --data "$WF_SL_PAYLOAD" "${WORKFLOW_HTTP_SOURCE}"
 echo "Complete. You may now find your worflow log in Sumologic."
 
 # Looping through each job data
