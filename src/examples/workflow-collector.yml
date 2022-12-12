@@ -3,7 +3,7 @@ description: |
 usage:
     version: "2.1"
     orbs:
-        sumologic: sumologicorb/sumologic-circleci-orb@2.0.1
+        sumologic: sumologicorb/reporter@2.1.0
     jobs:
         build:
             docker:
@@ -15,7 +15,7 @@ usage:
                 - image: cimg/node
             steps:
                 - run: echo "This job represents a typical deploy job"
-                - sumologic-circleci-orb/job-collector:
+                - reporter/job-collector:
                     environment: dev
                     team: APPS
         test:
@@ -23,14 +23,14 @@ usage:
                 - image: cimg/node
             steps:
                 - run: echo "This job represents a typical test job"
-                - sumologic-circleci-orb/job-collector:
+                - reporter/job-collector:
                     environment: QE
                     team: APPS
                     service: Solutions
     workflows:
         build-test-and-deploy:
             jobs:
-                - sumologic-circleci-orb/workflow-collector:
+                - reporter/workflow-collector:
                     custom-data: |
                         {"foo": "bar", "$SOME_KEY_VAR": "$SOME_VALUE_VAR"}
                 - build
