@@ -1,5 +1,5 @@
 # Sumologic Orb
-https://circleci.com/orbs/registry/orb/circleci/sumologic
+https://circleci.com/developer/orbs/orb/sumologic/sumologic?version=2.1.0
 
 Easily capture analytics from your CircleCI jobs in your Sumologic dashboard!
 
