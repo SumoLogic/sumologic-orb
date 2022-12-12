@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  reporter: sumologicorb/reporter@dev:<<pipeline.git.revision>>
+  reporter: sumologic/reporter@dev:<<pipeline.git.revision>>
   orb-tools: circleci/orb-tools@11.1
 
 filters: &filters
@@ -33,7 +33,7 @@ workflows:
       - orb-tools/pack:
           filters: *filters
       - orb-tools/publish:
-          orb-name: sumologicorb/reporter
+          orb-name: sumologic/reporter
           vcs-type: << pipeline.project.type >>
           pub-type: production
           requires:
