@@ -1,4 +1,4 @@
-#!/bin/bash
+in/bash
 WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
 WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
@@ -46,8 +46,16 @@ declare -A job_status_array
 # Set FIRST_RUN to true to ensure all initial updates are sent.
 FIRST_RUN=true
 # While we still have jobs which are runnung.
+TIMEOUT=$(date -d "${PARAM_TIMEOUT_SECONDS} seconds")
 while true
 do
+  NOW=date
+  if [[ $(date) > $TIMEOUT ]];
+  then
+    echo "Monitoring loop exceeded timeout of $PARAM_TIMEOUT_SECONDS seconds. Breaking loop and ending the job."
+    break
+  fi
+
   WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
   WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
   WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
