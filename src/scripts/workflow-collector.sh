@@ -1,4 +1,4 @@
-in/bash
+#!/bin/bash
 WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
 WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
