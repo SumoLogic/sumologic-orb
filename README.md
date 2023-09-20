@@ -3,7 +3,6 @@ https://circleci.com/developer/orbs/orb/sumologic/sumologic?version=2.1.1
 
 Easily capture analytics from your CircleCI jobs in your Sumologic dashboard!
 
-
 ## job-collector
 Add this command to your job with environment, team or service custom-data values as parameters. This command will run with the rest of the commands of the job for sending job log. This command has been introduced so as to send environment, team and service information at job level. If this command is not included at job level in one of it's steps, then the workflow-collector job will send the job log. Using it without the parameters will result in empty custom-data values being sent to Sumo.
 
