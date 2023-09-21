@@ -98,7 +98,7 @@ do
         JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq 'del(.circle_yml)' | jq 'del(.steps)')
         JOB_COLLECTOR_NAME="Job Collector"
         # Check if already monitored by a Job Collector.
-        if [[ " ${JOB_STEP_NAMES[*]} " =~ " ${JOB_COLLECTOR_NAME} " ]]; then
+        if [[ " ${JOB_STEP_NAMES[*]} " =~ $JOB_COLLECTOR_NAME ]]; then
           echo "This job is being monitored by a Job Collector - skipping sending an update to SumoLogic."
         else
           # Handle changes in state.
