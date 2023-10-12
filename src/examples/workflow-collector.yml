@@ -4,6 +4,7 @@ usage:
     version: "2.1"
     orbs:
         sumologic: sumologic/sumologic@2.2.0
+    jobs:
         build:
             docker:
                 - image: cimg/node
