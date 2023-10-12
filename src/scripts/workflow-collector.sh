@@ -55,10 +55,6 @@ do
     break
   fi
 
-  WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
-  WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
-  WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
-
   WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" | jq '.')
   WF_STATUS=$(echo "$WF_SL_PAYLOAD" | jq -r ".status")
 
@@ -67,6 +63,10 @@ do
     echo "Workflow status no longer running. Now: ${WF_STATUS}. Breaking loop."
     break
   fi
+
+  WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
+  WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
+  WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
 
   # Check all jobs.
   i="0"
