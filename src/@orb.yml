@@ -1,7 +1,7 @@
 version: 2.1
 
 description: >
-  Report CircleCI job analytics to your SumoLogic dashboard. CircleCI integration with SumoLogic SDO Solution: https://help.sumologic.com/docs/sdo/set-up-sdo/sdo-manual-configuration/#circleci-for-build-and-deploy
+  Report CircleCI job analytics to your SumoLogic dashboard. CircleCI integration with SumoLogic SDO Solution: https://help.sumologic.com/docs/observability/sdo/set-up-sdo/sdo-manual-configuration/#circleci-for-build-and-deploy
 display:
   home_url: "https://www.sumologic.com/"
   source_url: "https://github.com/SumoLogic/sumologic-orb"
