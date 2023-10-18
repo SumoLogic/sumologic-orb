@@ -7,7 +7,7 @@ parameters:
         description: A valid JSON object to append to the workflow data.
         type: string
     timeout-seconds:
-        default: 600
+        default: 180
         description: |
             Defauls to 600 seconds (10 minutes). An upper bound in seconds after which the job will end. This is a mitigation to the potential infinite
             monitoring loop if something weird on CircleCI's end happens. Though unlikely to happen - this catch all
