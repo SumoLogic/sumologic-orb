@@ -3,7 +3,7 @@ description: |
 usage:
     version: "2.1"
     orbs:
-        sumologic: sumologic/sumologic@2.2.0
+        sumologic: sumologic/sumologic@2.2.1
     jobs:
         build:
             docker:
