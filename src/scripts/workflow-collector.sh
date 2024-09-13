@@ -15,10 +15,16 @@ fi
 VCS_SHORT=$(echo "$CIRCLE_BUILD_URL" | cut -d"/" -f4)
 case "$VCS_SHORT" in
     gh)
+    # For GitHub OAuth App integration type
     VCS=github
     ;;
     bb)
+    # For GitHub OAuth App integration type
     VCS=bitbucket
+    ;;
+    circleci)
+    # For GitHub App and Gitlab  integration type
+    VCS=circleci
     ;;
     *)
     echo "No VCS found. Error" && exit 1
@@ -89,6 +95,7 @@ do
         echo "'$JOB_NAME' has a job number of 'null' and status of '$JOB_STATUS'. What's gone wrong?"
       elif [[ "$JOB_NUMBER" != "null" ]];
       then
+        # Todo migrate to v2 api currently uses older api version https://circleci.com/docs/api/v1/index.html#jobs
         JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
         JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq -r '.status')
         # Manually set job name as it is currently null

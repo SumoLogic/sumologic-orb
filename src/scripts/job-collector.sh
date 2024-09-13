@@ -1,13 +1,19 @@
 #!/bin/bash
 VCS_SHORT=$(echo "$CIRCLE_BUILD_URL" | cut -d"/" -f4)
 case "$VCS_SHORT" in
-gh)
+    gh)
+    # For GitHub OAuth App integration type
     VCS=github
     ;;
-bb)
+    bb)
+    # For GitHub OAuth App integration type
     VCS=bitbucket
     ;;
-*)
+    circleci)
+    # For GitHub App and Gitlab  integration type
+    VCS=circleci
+    ;;
+    *)
     echo "No VCS found. Error" && exit 1
     ;;
 esac
