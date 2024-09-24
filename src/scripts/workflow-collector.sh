@@ -32,7 +32,7 @@ else
     echo "No valid custom data found to append to the workflow data"
 fi
 
-echo "Sending current Workflow state to Sumo"
+echo "Sending current Workflow state logs to SumoLogic"
 curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" "${WORKFLOW_HTTP_SOURCE}"
 
 declare -A job_status_array
@@ -71,6 +71,8 @@ do
   WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
   WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
 
+  echo "Found $WF_LENGTH Jobs for workflow: $CIRCLE_WORKFLOW_ID."
+
   # Check all jobs.
   i="0"
   while [ $i -lt "$WF_LENGTH" ]
@@ -81,11 +83,11 @@ do
     JOB_NAME=$(echo "$JOB_DATA" | jq -r ".name")
     PROJECT_SLUG=$(echo "$JOB_DATA" | jq -r ".project_slug")
 
-    if [[ "${JOB_NAME}" != "workflow-collector" ]];
+    if [[ ! "${JOB_NAME}" =~ "workflow-collector" ]];
     then
       if ! [ "${job_status_array["${JOB_NAME}"]}" ];
       then
-        echo "Job '$JOB_NAME' (job number: '$JOB_NUMBER') not tracked, adding to array with status of '$JOB_STATUS'."
+        echo "Job '$JOB_NAME' of project '$PROJECT_SLUG' (job number: '$JOB_NUMBER') not tracked, adding to array with status of '$JOB_STATUS'."
         job_status_array["${JOB_NAME}"]=$JOB_STATUS
       fi
 
@@ -115,7 +117,7 @@ do
           # Handle changes in state.
           if [[ "${job_status_array["${JOB_NAME}"]}" != "$JOB_STATUS" ]] || $FIRST_RUN; then
             # Send update in status to SumoLogic
-            echo "Job '$JOB_NAME' status has changed '${job_status_array["${JOB_NAME}"]}' -> '$JOB_STATUS' FirstTimeRunning: '$FIRST_RUN'. Sending update to SumoLogic."
+            echo "Job '$JOB_NAME' status has changed '${job_status_array["${JOB_NAME}"]}' -> '$JOB_STATUS' FirstTimeRunning: '$FIRST_RUN'. Sending Job state logs to SumoLogic."
             JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq -c '.')
             if [[ -n "${PARAM_CUSTOMDATA}" ]] && echo "$CUSTOM_DATA" | jq -e;
             then
@@ -128,6 +130,8 @@ do
           job_status_array["${JOB_NAME}"]="$JOB_STATUS"
         fi
       fi
+    else
+        echo "Ignoring ${JOB_NAME} job - skipping sending an update to SumoLogic"
     fi
     i="$((i+1))"
     # echo "Incremented loop to $i. Continuing..."
@@ -147,7 +151,7 @@ do
         break
     fi
     if [[ "${job_status_array[$k]}" == "running" ]]; then
-      if [[ "$k" != "workflow-collector" ]]; then
+      if [[ ! "$k" =~ "workflow-collector" ]]; then
         FINISHED=false
         break
       fi
@@ -196,7 +200,7 @@ do
       WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD" | jq -c --arg STOPPED_AT "$STOPPED_AT" '.stopped_at = $STOPPED_AT')
     fi
 
-    echo "Sending final Workflow state to Sumo"
+    echo "Sending final Workflow state logs to SumoLogic"
     curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" -s "${WORKFLOW_HTTP_SOURCE}"
     echo "Finishing up."
     break
