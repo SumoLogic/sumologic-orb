@@ -1,32 +1,31 @@
 #!/bin/bash
 WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
-WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
-WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
-WF_MESSAGE=$(echo "$WF_DATA" | jq '.message')
-
 # Exit if no Workflow.
+if [[ "$WF_DATA" =~ "Invalid token" ]];
+then
+    echo "Your circle-token parameter may be wrong Error: $WF_DATA"
+    exit 1
+fi
+WF_MESSAGE=$(echo "$WF_DATA" | jq '.message' 2>&1)
+CMD_STATUS=$?
+if [ "$CMD_STATUS" -ne 0 ] ; then
+   echo "Error in parsing payload of workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA" && exit 1
+fi
 if [ "$WF_MESSAGE" = "\"Workflow not found\"" ];
 then
     echo "No Workflow was found."
     echo "Your circle-token parameter may be wrong or you do not have access to this Workflow."
     exit 1
 fi
-
-VCS_SHORT=$(echo "$CIRCLE_BUILD_URL" | cut -d"/" -f4)
-case "$VCS_SHORT" in
-    gh)
-    VCS=github
-    ;;
-    bb)
-    VCS=bitbucket
-    ;;
-    *)
-    echo "No VCS found. Error" && exit 1
-    ;;
-esac
+WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 
 # Get the current state of all jobs.
-WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" | jq '.')
+WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
+WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
+CMD_STATUS=$?
+if [ "$CMD_STATUS" -ne 0 ] ; then
+   echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW" && exit 1
+fi
 
 # Append any custom data to the workflow data
 ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
@@ -39,14 +38,15 @@ else
     echo "No valid custom data found to append to the workflow data"
 fi
 
-echo "Sending current Workflow state to Sumo"
-curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" "${WORKFLOW_HTTP_SOURCE}"
+echo "Sending current Workflow state logs to SumoLogic"
+curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" "${WORKFLOW_HTTP_SOURCE}"
 
 declare -A job_status_array
 # Set FIRST_RUN to true to ensure all initial updates are sent.
 FIRST_RUN=true
 # While we still have jobs which are runnung.
 TIMEOUT=$(date -d "${PARAM_TIMEOUT_SECONDS} seconds")
+counter=0
 while true
 do
   if [[ $(date) > $TIMEOUT ]];
@@ -54,19 +54,32 @@ do
     echo "Monitoring loop exceeded timeout of $PARAM_TIMEOUT_SECONDS seconds. Breaking loop and ending the job."
     break
   fi
-
-  WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" | jq '.')
+  counter=$((counter+1))
+  WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
+  WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
+  CMD_STATUS=$?
+  if [ "$CMD_STATUS" -ne 0 ] ; then
+    echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
+    continue
+  fi
   WF_STATUS=$(echo "$WF_SL_PAYLOAD" | jq -r ".status")
 
-  if [[ "$WF_STATUS" != "running" ]];
+  if [[ "$WF_STATUS" != "running" ]] && [[ "$FIRST_RUN" == false ]];
   then
     echo "Workflow status no longer running. Now: ${WF_STATUS}. Breaking loop."
     break
   fi
 
   WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
-  WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
+  WF_ITEMS=$(echo "$WF_DATA" | jq '.items' 2>&1)
+  CMD_STATUS=$?
+  if [ "$CMD_STATUS" -ne 0 ] ; then
+     echo "Error in parsing payload of workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA counter: $counter"
+     continue
+  fi
   WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
+
+  echo "Found $WF_LENGTH Jobs for workflow: $CIRCLE_WORKFLOW_ID."
 
   # Check all jobs.
   i="0"
@@ -76,11 +89,13 @@ do
     JOB_NUMBER=$(echo "$JOB_DATA" | jq -r ".job_number")
     JOB_STATUS=$(echo "$JOB_DATA" | jq -r '.status')
     JOB_NAME=$(echo "$JOB_DATA" | jq -r ".name")
-    if [[ "${JOB_NAME}" != "workflow-collector" ]];
+    PROJECT_SLUG=$(echo "$JOB_DATA" | jq -r ".project_slug")
+
+    if [[ ! "${JOB_NAME}" =~ "workflow-collector" ]];
     then
       if ! [ "${job_status_array["${JOB_NAME}"]}" ];
       then
-        echo "Job '$JOB_NAME' (job number: '$JOB_NUMBER') not tracked, adding to array with status of '$JOB_STATUS'."
+        echo "Job '$JOB_NAME' of project '$PROJECT_SLUG' (job number: '$JOB_NUMBER') not tracked, adding to array with status of '$JOB_STATUS'."
         job_status_array["${JOB_NAME}"]=$JOB_STATUS
       fi
 
@@ -89,8 +104,15 @@ do
         echo "'$JOB_NAME' has a job number of 'null' and status of '$JOB_STATUS'. What's gone wrong?"
       elif [[ "$JOB_NUMBER" != "null" ]];
       then
-        JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
-        JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq -r '.status')
+        # Todo migrate to v2 api currently uses older api version https://circleci.com/docs/api/v1/index.html#jobs
+        # Currently v2 api does not contain step details https://discuss.circleci.com/t/circleci-v2-api-job-step/50937
+        JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$PROJECT_SLUG/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
+        JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq -r '.status' 2>&1)
+        CMD_STATUS=$?
+        if [ "$CMD_STATUS" -ne 0 ] ; then
+           echo "Error in parsing payload of single job: $PROJECT_SLUG/$JOB_NUMBER error: $JOB_DATA_RAW counter: $counter"
+           continue
+        fi
         # Manually set job name as it is currently null
         JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq --arg JOBNAME "$JOB_NAME" '.job_name = $JOBNAME')
         JOB_STEP_NAMES=$(echo "$JOB_DATA_RAW" | jq '.steps' | jq .[] | jq '.name')
@@ -104,7 +126,7 @@ do
           # Handle changes in state.
           if [[ "${job_status_array["${JOB_NAME}"]}" != "$JOB_STATUS" ]] || $FIRST_RUN; then
             # Send update in status to SumoLogic
-            echo "Job '$JOB_NAME' status has changed '${job_status_array["${JOB_NAME}"]}' -> '$JOB_STATUS'. Sending update to SumoLogic."
+            echo "Job '$JOB_NAME' status has changed '${job_status_array["${JOB_NAME}"]}' -> '$JOB_STATUS' FirstTimeRunning: '$FIRST_RUN'. Sending Job state logs to SumoLogic."
             JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq -c '.')
             if [[ -n "${PARAM_CUSTOMDATA}" ]] && echo "$CUSTOM_DATA" | jq -e;
             then
@@ -112,11 +134,13 @@ do
             else
                 echo "No valid custom data found to append to the job data."
             fi
-            curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$JOB_DATA_RAW" "${JOB_HTTP_SOURCE}"
+            curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$JOB_DATA_RAW" "${JOB_HTTP_SOURCE}"
           fi
           job_status_array["${JOB_NAME}"]="$JOB_STATUS"
         fi
       fi
+    else
+        echo "Ignoring ${JOB_NAME} job - skipping sending an update to SumoLogic"
     fi
     i="$((i+1))"
     # echo "Incremented loop to $i. Continuing..."
@@ -136,7 +160,7 @@ do
         break
     fi
     if [[ "${job_status_array[$k]}" == "running" ]]; then
-      if [[ "$k" != "workflow-collector" ]]; then
+      if [[ ! "$k" =~ "workflow-collector" ]]; then
         FINISHED=false
         break
       fi
@@ -147,7 +171,13 @@ do
     echo "All jobs are in non running state other than the workflow-collector."
 
     # Get the final state of all jobs.
-    WF_SL_PAYLOAD=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" | jq '.')
+    WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
+    WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
+    CMD_STATUS=$?
+    if [ "$CMD_STATUS" -ne 0 ] ; then
+       echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
+       continue
+    fi
 
     # Append any custom data to the workflow data
     ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
@@ -180,8 +210,8 @@ do
       WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD" | jq -c --arg STOPPED_AT "$STOPPED_AT" '.stopped_at = $STOPPED_AT')
     fi
 
-    echo "Sending final Workflow state to Sumo"
-    curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" -s "${WORKFLOW_HTTP_SOURCE}"
+    echo "Sending final Workflow state logs to SumoLogic"
+    curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" -s "${WORKFLOW_HTTP_SOURCE}"
     echo "Finishing up."
     break
   else
