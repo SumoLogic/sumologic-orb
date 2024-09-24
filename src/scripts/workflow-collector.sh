@@ -1,11 +1,15 @@
 #!/bin/bash
-WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}" 2>&1)
-
+WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
 # Exit if no Workflow.
-if [ $? -ne 0 ] ; then
-   echo "Error in fetching workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA" && exit 1
+if [[ "$WF_DATA" =~ "Invalid token" ]];
+then
+    echo "Your circle-token parameter may be wrong Error: $WF_DATA"
+    exit 1
 fi
-WF_MESSAGE=$(echo "$WF_DATA" | jq '.message')
+WF_MESSAGE=$(echo "$WF_DATA" | jq '.message' 2>&1)
+if [ $? -ne 0 ] ; then
+   echo "Error in parsing payload of workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA" && exit 1
+fi
 if [ "$WF_MESSAGE" = "\"Workflow not found\"" ];
 then
     echo "No Workflow was found."
@@ -15,11 +19,12 @@ fi
 WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 
 # Get the current state of all jobs.
-WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" 2>&1)
+WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
+WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
+
 if [ $? -ne 0 ] ; then
-   echo "Error in fetching workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW" && exit 1
+   echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW" && exit 1
 fi
-WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.')
 
 # Append any custom data to the workflow data
 ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
@@ -49,12 +54,12 @@ do
     break
   fi
   counter=$((counter+1))
-  WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" 2>&1)
+  WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
+  WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
   if [ $? -ne 0 ] ; then
-     echo "Error in fetching workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
-     continue
+    echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
+    continue
   fi
-  WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.')
   WF_STATUS=$(echo "$WF_SL_PAYLOAD" | jq -r ".status")
 
   if [[ "$WF_STATUS" != "running" ]] && [[ "$FIRST_RUN" == false ]];
@@ -63,12 +68,12 @@ do
     break
   fi
 
-  WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}" 2>&1)
+  WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
+  WF_ITEMS=$(echo "$WF_DATA" | jq '.items' 2>&1)
   if [ $? -ne 0 ] ; then
-     echo "Error in fetching workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA counter: $counter"
+     echo "Error in parsing payload of workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA counter: $counter"
      continue
   fi
-  WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
   WF_LENGTH=$(echo "$WF_ITEMS" | jq length)
 
   echo "Found $WF_LENGTH Jobs for workflow: $CIRCLE_WORKFLOW_ID."
@@ -98,12 +103,12 @@ do
       then
         # Todo migrate to v2 api currently uses older api version https://circleci.com/docs/api/v1/index.html#jobs
         # Currently v2 api does not contain step details https://discuss.circleci.com/t/circleci-v2-api-job-step/50937
-        JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$PROJECT_SLUG/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}" 2>&1)
+        JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$PROJECT_SLUG/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
+        JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq -r '.status' 2>&1)
         if [ $? -ne 0 ] ; then
-           echo "Error in fetching single job: $PROJECT_SLUG/$JOB_NUMBER error: $JOB_DATA_RAW counter: $counter"
+           echo "Error in parsing payload of single job: $PROJECT_SLUG/$JOB_NUMBER error: $JOB_DATA_RAW counter: $counter"
            continue
         fi
-        JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq -r '.status')
         # Manually set job name as it is currently null
         JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq --arg JOBNAME "$JOB_NAME" '.job_name = $JOBNAME')
         JOB_STEP_NAMES=$(echo "$JOB_DATA_RAW" | jq '.steps' | jq .[] | jq '.name')
@@ -162,12 +167,12 @@ do
     echo "All jobs are in non running state other than the workflow-collector."
 
     # Get the final state of all jobs.
-    WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}" 2>&1)
+    WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
+    WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
     if [ $? -ne 0 ] ; then
-       echo "Error in fetching workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
+       echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
        continue
     fi
-    WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.')
 
     # Append any custom data to the workflow data
     ESCAPED_JSON=$(echo "${PARAM_CUSTOMDATA}" | sed -E 's/([^\]|^)"/\1\\"/g')
