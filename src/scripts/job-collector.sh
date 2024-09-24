@@ -34,8 +34,8 @@ fi
 # removing steps and circle_yml keys from object
 JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq 'del(.circle_yml)' | jq 'del(.steps)')
 JOB_NAME=$(echo "$JOB_DATA_RAW" | jq .workflows | jq .job_name)
-
-if [ $? -ne 0 ] ; then
+CMD_STATUS=$?
+if [ "$CMD_STATUS" -ne 0 ] ; then
    echo "Error in parsing payload: $VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM error: $JOB_DATA_RAW"
    exit 1
 fi

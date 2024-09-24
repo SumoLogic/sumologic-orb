@@ -7,7 +7,8 @@ then
     exit 1
 fi
 WF_MESSAGE=$(echo "$WF_DATA" | jq '.message' 2>&1)
-if [ $? -ne 0 ] ; then
+CMD_STATUS=$?
+if [ "$CMD_STATUS" -ne 0 ] ; then
    echo "Error in parsing payload of workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA" && exit 1
 fi
 if [ "$WF_MESSAGE" = "\"Workflow not found\"" ];
@@ -21,8 +22,8 @@ WF_ITEMS=$(echo "$WF_DATA" | jq '.items')
 # Get the current state of all jobs.
 WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
 WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
-
-if [ $? -ne 0 ] ; then
+CMD_STATUS=$?
+if [ "$CMD_STATUS" -ne 0 ] ; then
    echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW" && exit 1
 fi
 
@@ -56,7 +57,8 @@ do
   counter=$((counter+1))
   WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
   WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
-  if [ $? -ne 0 ] ; then
+  CMD_STATUS=$?
+  if [ "$CMD_STATUS" -ne 0 ] ; then
     echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
     continue
   fi
@@ -70,7 +72,8 @@ do
 
   WF_DATA=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job?circle-token=${CIRCLE_TOKEN}")
   WF_ITEMS=$(echo "$WF_DATA" | jq '.items' 2>&1)
-  if [ $? -ne 0 ] ; then
+  CMD_STATUS=$?
+  if [ "$CMD_STATUS" -ne 0 ] ; then
      echo "Error in parsing payload of workflow jobs: $CIRCLE_WORKFLOW_ID/job error: $WF_DATA counter: $counter"
      continue
   fi
@@ -105,7 +108,8 @@ do
         # Currently v2 api does not contain step details https://discuss.circleci.com/t/circleci-v2-api-job-step/50937
         JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$PROJECT_SLUG/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
         JOB_STATUS=$(echo "$JOB_DATA_RAW" | jq -r '.status' 2>&1)
-        if [ $? -ne 0 ] ; then
+        CMD_STATUS=$?
+        if [ "$CMD_STATUS" -ne 0 ] ; then
            echo "Error in parsing payload of single job: $PROJECT_SLUG/$JOB_NUMBER error: $JOB_DATA_RAW counter: $counter"
            continue
         fi
@@ -169,7 +173,8 @@ do
     # Get the final state of all jobs.
     WF_SL_PAYLOAD_RAW=$(curl -s "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID?circle-token=${CIRCLE_TOKEN}")
     WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.' 2>&1)
-    if [ $? -ne 0 ] ; then
+    CMD_STATUS=$?
+    if [ "$CMD_STATUS" -ne 0 ] ; then
        echo "Error in parsing payload of workflow: $CIRCLE_WORKFLOW_ID error: $WF_SL_PAYLOAD_RAW counter: $counter"
        continue
     fi
