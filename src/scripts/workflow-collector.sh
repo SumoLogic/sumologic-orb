@@ -33,7 +33,7 @@ else
 fi
 
 echo "Sending current Workflow state to Sumo"
-curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" "${WORKFLOW_HTTP_SOURCE}"
+curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" "${WORKFLOW_HTTP_SOURCE}"
 
 declare -A job_status_array
 # Set FIRST_RUN to true to ensure all initial updates are sent.
@@ -57,7 +57,7 @@ do
   WF_SL_PAYLOAD=$(echo "$WF_SL_PAYLOAD_RAW" | jq '.')
   WF_STATUS=$(echo "$WF_SL_PAYLOAD" | jq -r ".status")
 
-  if [[ "$WF_STATUS" != "running" ]];
+  if [[ "$WF_STATUS" != "running" ]] && [[ "$FIRST_RUN" == false ]];
   then
     echo "Workflow status no longer running. Now: ${WF_STATUS}. Breaking loop."
     break
@@ -115,7 +115,7 @@ do
           # Handle changes in state.
           if [[ "${job_status_array["${JOB_NAME}"]}" != "$JOB_STATUS" ]] || $FIRST_RUN; then
             # Send update in status to SumoLogic
-            echo "Job '$JOB_NAME' status has changed '${job_status_array["${JOB_NAME}"]}' -> '$JOB_STATUS'. Sending update to SumoLogic."
+            echo "Job '$JOB_NAME' status has changed '${job_status_array["${JOB_NAME}"]}' -> '$JOB_STATUS' FirstTimeRunning: '$FIRST_RUN'. Sending update to SumoLogic."
             JOB_DATA_RAW=$(echo "$JOB_DATA_RAW" | jq -c '.')
             if [[ -n "${PARAM_CUSTOMDATA}" ]] && echo "$CUSTOM_DATA" | jq -e;
             then
@@ -123,7 +123,7 @@ do
             else
                 echo "No valid custom data found to append to the job data."
             fi
-            curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$JOB_DATA_RAW" "${JOB_HTTP_SOURCE}"
+            curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$JOB_DATA_RAW" "${JOB_HTTP_SOURCE}"
           fi
           job_status_array["${JOB_NAME}"]="$JOB_STATUS"
         fi
@@ -197,7 +197,7 @@ do
     fi
 
     echo "Sending final Workflow state to Sumo"
-    curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" -s "${WORKFLOW_HTTP_SOURCE}"
+    curl -s -w "SumoHTTPSendStatus: %{http_code}\n" -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "$WF_SL_PAYLOAD" -s "${WORKFLOW_HTTP_SOURCE}"
     echo "Finishing up."
     break
   else
