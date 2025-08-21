@@ -87,6 +87,9 @@ do
       if [[ "$JOB_NUMBER" == "null" ]] && [[ "$JOB_STATUS" != "blocked" ]];
       then
         echo "'$JOB_NAME' has a job number of 'null' and status of '$JOB_STATUS'. What's gone wrong?"
+      elif [[ "$JOB_STATUS" == "blocked" ]];
+      then
+        echo "Job '$JOB_NAME' is blocked. Will wait for status to change and send an update to SumoLogic."
       elif [[ "$JOB_NUMBER" != "null" ]];
       then
         JOB_DATA_RAW=$(curl -s "https://circleci.com/api/v1.1/project/$VCS/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$JOB_NUMBER?circle-token=${CIRCLE_TOKEN}")
