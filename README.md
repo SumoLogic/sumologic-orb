@@ -24,8 +24,13 @@ Add this job to your workflow with no require statements. This job will run in p
     `shellcheck src/scripts/*.sh`
 
 ## Release
-Orb in this repository is registered with a namespace in circleCI already. When any PR is created or any release is created, a job is triggered in CircleCI. To monitor this job you need to make an account in [circleCI](app.circleci.com) with sumologic github account and authorize to add SumoLogic organization. In addition to this a environment variable CIRCLE_TOKEN needs to be set. Value of this variable needs to be set to CircleCI api token which can be generated from steps [here](https://circleci.com/docs/guides/toolkit/managing-api-tokens/#creating-a-personal-api-token). To set environment variable you need to [create a context](https://circleci.com/docs/guides/security/contexts/#create-and-use-a-context) by the name of `orb-publishing` and set CIRCLE_TOKEN environment variable with its value as personal api token.
+Orb in this repository is registered with a namespace in CircleCI already. When any PR is created or any release is created, a job is triggered in CircleCI. To make this job pass successfully you need to follow these steps: 
 
-Any job triggered on PR and release creation in circleCI will run a job orb-tools/publish in circleCI. This job is responsible for publishing your orb in circleCI repo, which can be referred by anyone in there circleCI pipeline. For this job to pass you need to be the owner of the Sumologic github organization. IT team can be requested for a temporary ownership access. Reference [ticket](https://sumologic.atlassian.net/servicedesk/customer/portal/5/HELP-35375).
+1. Create an account in [CircleCI](https://app.circleci.com) using your Sumologic GitHub account.
+2. Authorize the account to add the SumoLogic organization.
+3. Generate a CircleCI API token by following the steps [here](https://circleci.com/docs/guides/toolkit/managing-api-tokens/#creating-a-personal-api-token).
+4. [Create a context](https://circleci.com/docs/guides/security/contexts/#create-and-use-a-context) and name it `orb-publishing` and set the `CIRCLE_TOKEN` as an environment variable within this context.
 
-The job created by PR creation results in creation of temporary dev orb (can be used to provide patch build) and job created by release results in an official orb release. Both of such orbs are accessible via a link which can be fetched from orb-tools/publish logs under "Publishing Orb Release" section.
+Any job triggered on PR and release creation in CircleCI will run a job orb-tools/publish in CircleCI. This job is responsible for publishing your orb in CircleCI repo, which can be referred by anyone in their CircleCI pipeline. For this job to pass you need to be the owner of the SumoLogic github organization. IT team can be requested for a temporary ownership access. Reference [ticket](https://sumologic.atlassian.net/servicedesk/customer/portal/5/HELP-35375).
+
+The job created by PR creation results in the creation of a temporary dev orb (can be used to provide patch build) and Circle the job created by releaseCI results in an official orb release. Both of such orbs are accessible via a link which can be fetched from orb-tools/publish logs under "Publishing Orb Release" section.
